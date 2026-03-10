@@ -582,8 +582,7 @@
     </style>
 </head>
 
-<body>
-
+<body oncontextmenu="return false" ondragstart="return false" onselectstart="return false">
     <div class="app-container">
 
         <!-- LEFT: Input Panel -->
@@ -1257,14 +1256,104 @@
             const endY = globalMaxDate.getFullYear();
             const endM = globalMaxDate.getMonth();
 
-            while (cY < endY || (cY === endY && cM <= endM)) {
+            let monthsToRender = [];
+            let tempY = cY;
+            let tempM = cM;
+            while (tempY < endY || (tempY === endY && tempM <= endM)) {
+                monthsToRender.push({ y: tempY, m: tempM });
+                tempM++;
+                if (tempM > 11) { tempM = 0; tempY++; }
+            }
 
+            // Omit first month if its sessions fit in second month's trailing cells
+            if (monthsToRender.length > 1) {
+                const second = monthsToRender[1];
+                const trailingStartDate = new Date(second.y, second.m, 1 - new Date(second.y, second.m, 1).getDay());
+                if (globalMinDate >= trailingStartDate) monthsToRender.shift();
+            }
+
+            // Omit last month if its sessions fit in previous month's leading cells
+            if (monthsToRender.length > 1) {
+                const prev = monthsToRender[monthsToRender.length - 2];
+                const prevFirstD = new Date(prev.y, prev.m, 1);
+                const prevLastD = new Date(prev.y, prev.m + 1, 0);
+                const leadingDaysCount = (7 - ((prevFirstD.getDay() + prevLastD.getDate()) % 7)) % 7;
+                const leadingEndDate = new Date(prev.y, prev.m, prevLastD.getDate() + leadingDaysCount);
+                if (globalMaxDate <= leadingEndDate) monthsToRender.pop();
+            }
+
+            const renderCell = (container, y, m, d, isAdjacent) => {
+                const currDate = new Date(y, m, d);
+                const normY = currDate.getFullYear();
+                const normM = currDate.getMonth();
+                const normD = currDate.getDate();
+                const dStr = `${normY}-${String(normM + 1).padStart(2, '0')}-${String(normD).padStart(2, '0')}`;
+
+                const cell = document.createElement('div');
+                cell.className = 'cal-cell';
+
+                const sessionMatchList = currentCalculation.filter(s => s.dateStr === dStr);
+                let primaryMatch = sessionMatchList.find(s => s.state !== 'makeup') || sessionMatchList[0];
+
+                if (isAdjacent) {
+                    if (!primaryMatch) {
+                        cell.style.opacity = '0.3';
+                    } else if (!monthsToRender.some(mItem => mItem.y === normY && mItem.m === normM)) {
+                        // The original month is NOT being rendered, keep opacity 1.0 so sessions pop out
+                    } else {
+                        // The original month IS being rendered above/below it, dim slightly to prevent confusion
+                        cell.style.opacity = '0.5';
+                    }
+                }
+
+                if (primaryMatch) {
+                    cell.classList.add(primaryMatch.state);
+
+                    if (primaryMatch.state === 'active') {
+                        cell.style.setProperty('--theme-color', primaryMatch.color);
+                    } else if (primaryMatch.state === 'makeup') {
+                        cell.style.setProperty('--theme-color', '#00c473');
+                        cell.style.background = '#00c473';
+                        cell.style.color = 'white';
+                    }
+
+                    cell.innerHTML = `
+                   <span>${normD}</span>
+                   ${(primaryMatch.state !== 'exception' && primaryMatch.state !== 'tbd') ? `<span class="cal-session-num">${primaryMatch.sessionNumInPeriod}</span>` : ''}
+                `;
+
+                    cell.addEventListener('click', () => {
+                        if (primaryMatch.state === 'makeup') return;
+
+                        const current = sessionStates[dStr];
+                        const curState = typeof current === 'object' ? current.state : current;
+                        const curMemo = typeof current === 'object' ? current.memo : '';
+                        const curMakeup = typeof current === 'object' ? current.makeupDate : '';
+
+                        if (!curState) {
+                            sessionStates[dStr] = { state: 'exception', memo: curMemo, makeupDate: curMakeup };
+                        } else if (curState === 'exception') {
+                            sessionStates[dStr] = { state: 'tbd', memo: curMemo, makeupDate: curMakeup };
+                        } else {
+                            delete sessionStates[dStr];
+                        }
+                        renderCalendar();
+                    });
+                } else {
+                    cell.classList.add('disabled');
+                    cell.textContent = normD;
+                }
+
+                container.appendChild(cell);
+            };
+
+            monthsToRender.forEach(month => {
                 const monthCard = document.createElement('div');
                 monthCard.className = 'cal-month-card';
 
                 const mTitle = document.createElement('div');
                 mTitle.className = 'cal-month-title';
-                mTitle.textContent = `${cY}년 ${cM + 1}월`;
+                mTitle.textContent = `${month.y}년 ${month.m + 1}월`;
                 monthCard.appendChild(mTitle);
 
                 const grid = document.createElement('div');
@@ -1275,76 +1364,30 @@
                     grid.appendChild(h);
                 });
 
-                const firstD = new Date(cY, cM, 1);
-                const lastD = new Date(cY, cM + 1, 0);
+                const firstD = new Date(month.y, month.m, 1);
+                const lastD = new Date(month.y, month.m + 1, 0);
 
-                for (let i = 0; i < firstD.getDay(); i++) {
-                    const empty = document.createElement('div'); empty.className = 'cal-cell empty';
-                    grid.appendChild(empty);
+                // Trailing cells
+                const trailingCount = firstD.getDay();
+                for (let i = trailingCount - 1; i >= 0; i--) {
+                    renderCell(grid, month.y, month.m, -i, true);
                 }
 
+                // Current month cells
                 for (let d = 1; d <= lastD.getDate(); d++) {
-                    const currDate = new Date(cY, cM, d);
-                    const dStr = `${cY}-${String(cM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    renderCell(grid, month.y, month.m, d, false);
+                }
 
-                    const cell = document.createElement('div');
-                    cell.className = 'cal-cell';
-
-                    const sessionMatchList = currentCalculation.filter(s => s.dateStr === dStr);
-                    // Handle primary session state for the visually matched day
-                    // If there's an active/exception/tbd vs makeup, we display active/exception/tbd
-                    // If only makeup, we display makeup green.
-                    let primaryMatch = sessionMatchList.find(s => s.state !== 'makeup') || sessionMatchList[0];
-
-                    if (primaryMatch) {
-                        cell.classList.add(primaryMatch.state);
-
-                        // Inject the distinct theme color variable or makeup color
-                        if (primaryMatch.state === 'active') {
-                            cell.style.setProperty('--theme-color', primaryMatch.color);
-                        } else if (primaryMatch.state === 'makeup') {
-                            cell.style.setProperty('--theme-color', '#00c473');
-                            cell.style.background = '#00c473';
-                            cell.style.color = 'white';
-                        }
-
-                        cell.innerHTML = `
-                   <span>${d}</span>
-                   ${(primaryMatch.state !== 'exception' && primaryMatch.state !== 'tbd') ? `<span class="cal-session-num">${primaryMatch.sessionNumInPeriod}</span>` : ''}
-                `;
-
-                        cell.addEventListener('click', () => {
-                            // Don't toggle state if it is explicitly a makeup day only
-                            if (primaryMatch.state === 'makeup') return;
-
-                            const current = sessionStates[dStr];
-                            const curState = typeof current === 'object' ? current.state : current;
-                            const curMemo = typeof current === 'object' ? current.memo : '';
-                            const curMakeup = typeof current === 'object' ? current.makeupDate : '';
-
-                            if (!curState) {
-                                sessionStates[dStr] = { state: 'exception', memo: curMemo, makeupDate: curMakeup };
-                            } else if (curState === 'exception') {
-                                sessionStates[dStr] = { state: 'tbd', memo: curMemo, makeupDate: curMakeup };
-                            } else {
-                                delete sessionStates[dStr];
-                            }
-                            renderCalendar();
-                        });
-                    } else {
-                        cell.classList.add('disabled');
-                        cell.textContent = d;
-                    }
-
-                    grid.appendChild(cell);
+                // Leading cells
+                const totalCells = trailingCount + lastD.getDate();
+                const leadingCount = (7 - (totalCells % 7)) % 7;
+                for (let d = 1; d <= leadingCount; d++) {
+                    renderCell(grid, month.y, month.m + 1, d, true);
                 }
 
                 monthCard.appendChild(grid);
                 calWrapper.appendChild(monthCard);
-
-                cM++;
-                if (cM > 11) { cM = 0; cY++; }
-            }
+            });
 
             // Sync left-side lists
             if (!skipListSync) {

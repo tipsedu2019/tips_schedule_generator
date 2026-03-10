@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팁스영어수학학원 수업 일정표 만들기</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Apple Calendar Aesthetic V5.1 */
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        :root {
+            --color-bg-base: #f5f5f7;
+            --color-surface: #ffffff;
+            --color-text-main: #1d1d1f;
+            --color-text-second: #86868b;
+            --color-text-third: #d2d2d7;
+            --color-border: rgba(0, 0, 0, 0.1);
+            --color-divider: rgba(0, 0, 0, 0.06);
+
+            --color-exception: #ff3b30;
+            --color-exception-bg: #ffe5e5;
+            --color-tbd: #ffcc00;
+            --color-tbd-bg: #fff5cc;
+
+            --theme-0: #007aff;
+            --theme-1: #af52de;
+            --theme-2: #34c759;
+            --theme-3: #ff9500;
+            --theme-4: #5856d6;
+            --theme-5: #ff2d55;
+
+            --font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+
+            --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.04);
+            --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-bg-base);
+            color: var(--color-text-main);
+            padding: 3rem 1.5rem 6rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1300px;
+            display: grid;
+            grid-template-columns: 460px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1000px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card System */
+        .card {
+            background-color: var(--color-surface);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Tooltip */
+        .tooltip-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--color-text-third);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            cursor: help;
+            transition: 0.2s;
+        }
+
+        .help-icon:hover {
+            background: var(--theme-0);
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #1d1d1f;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 400;
+            line-height: 1.4;
+            position: absolute;
+            z-index: 100;
+            bottom: 150%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.2s, bottom 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1d1d1f transparent transparent transparent;
+        }
+
+        .tooltip-wrap:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            bottom: 125%;
+        }
+
+        /* Inputs */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-second);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.8rem 0.75rem;
+            /* Slightly reduced padding */
+            font-size: 0.95rem;
+            /* Slightly reduced font size for density */
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            background-color: #fbfbfd;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            font-family: inherit;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2386868b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            cursor: pointer;
+            padding-right: 2.5rem;
+        }
+
+        input[type="date"] {
+            cursor: pointer;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--theme-0);
+            background-color: var(--color-surface);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
+        }
+
+        /* Toggle Groups (Days, Months, Sessions) */
+        .toggle-group {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-input {
+            display: none;
+        }
+
+        .toggle-label {
+            min-width: 40px;
+            height: 36px;
+            padding: 0 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-second);
+            background-color: #fbfbfd;
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        /* Day checkboxes are circle-ish */
+        .day-label {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+        }
+
+        .toggle-input:checked+.toggle-label {
+            background-color: var(--theme-0);
+            color: white;
+            border-color: var(--theme-0);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+
+        /* Billing Period List (청구월 Card Layout) */
+        .billing-period-card {
+            background: #fbfbfd;
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .bp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+
+        .bp-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .bp-item {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .remove-btn {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--color-exception);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: rgba(255, 59, 48, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius-lg);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-primary {
+            background-color: var(--theme-0);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--theme-0);
+        }
+
+        .btn-ghost:hover {
+            background-color: rgba(0, 122, 255, 0.08);
+        }
+
+        .btn-secondary {
+            background-color: #fbfbfd;
+            color: var(--color-text-main);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f5f5f7;
+        }
+
+        .btn-notion {
+            background-color: #1d1d1f;
+            color: white;
+            border-radius: var(--radius-lg);
+        }
+
+        /* Calendar Preview Area */
+        .preview-area {
+            position: relative;
+        }
+
+        .view-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #exportArea {
+            background: var(--color-surface);
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+        }
+
+        .export-title {
+            text-align: center;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            display: none;
+            color: var(--color-text-main);
+            letter-spacing: -0.03em;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--color-text-second);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .calendar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        /* Individual Month Card */
+        .cal-month-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--color-divider);
+        }
+
+        .cal-month-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-text-main);
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .cal-day-label {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--color-text-second);
+            padding-bottom: 0.5rem;
+        }
+
+        .cal-cell {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 600;
+            position: relative;
+            user-select: none;
+        }
+
+        .cal-cell.empty {
+            background: transparent;
+        }
+
+        .cal-cell.disabled {
+            color: var(--color-text-third);
+            font-weight: 400;
+        }
+
+        .cal-cell.active {
+            background-color: var(--theme-color, var(--theme-0));
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: transform 0.1s;
+        }
+
+        .cal-cell.active:active {
+            transform: scale(0.9);
+        }
+
+        .cal-cell.exception {
+            background-color: var(--color-exception);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 59, 48, 0.2);
+        }
+
+        .cal-cell.tbd {
+            background-color: var(--color-tbd);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .cal-session-num {
+            font-size: 0.55rem;
+            opacity: 0.9;
+            margin-top: -2px;
+            line-height: 1;
+            font-weight: 700;
+        }
+
+        /* Pretty Table Output */
+        .schedule-table-wrapper {
+            flex: 1;
+            background: rgba(0, 122, 255, 0.03);
+            border-radius: var(--radius-lg);
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.35rem;
+            /* Reduced spacing */
+            font-size: 0.8rem;
+            /* Smaller font */
+            text-align: center;
+        }
+
+        .schedule-table th {
+            color: var(--color-text-second);
+            font-weight: 600;
+            padding: 0.25rem;
+            /* Reduced padding */
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.75rem;
+        }
+
+        .schedule-table td {
+            padding: 0.3rem 0.2rem;
+            /* Reduced padding */
+            background: var(--color-surface);
+            color: var(--color-text-main);
+            font-weight: 500;
+            vertical-align: middle;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+            font-size: 0.8rem;
+        }
+
+        .month-divider td {
+            background: #f0f4f8 !important;
+            font-weight: 700 !important;
+            color: #444 !important;
+            font-size: 0.75rem !important;
+            padding: 0.2rem !important;
+            text-align: left !important;
+            padding-left: 0.75rem !important;
+            border-radius: 4px;
+        }
+
+        .layout-horizontal {
+            display: flex;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        .calendar-stack {
+            flex: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- LEFT: Input Panel -->
+        <div class="card">
+            <h1 style="line-height: 1.2;">팁스영어수학학원<br>수업 일정표 만들기</h1>
+
+            <form id="scheduleForm">
+                <div class="form-group">
+                    <div class="tooltip-wrap">
+                        <label style="margin:0;">과목 선택</label>
+                        <span class="help-icon">?</span>
+                        <div class="tooltip-text">
+                            일정표 제목 및 저장 파일명에 과목명이 자동으로 포함됩니다.<br>(예: [영어] 중1B1)
+                        </div>
+                    </div>
+                    <div class="toggle-group" id="subjectGroup" style="margin-top:0.5rem;">
+                        <input type="radio" id="sub-eng" name="subject" class="toggle-input" value="영어" checked>
+                        <label for="sub-eng" class="toggle-label" style="min-width: 60px;">영어</label>
+                        <input type="radio" id="sub-math" name="subject" class="toggle-input" value="수학">
+                        <label for="sub-math" class="toggle-label" style="min-width: 60px;">수학</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="tooltip-wrap">
+                        <label style="margin:0;">공식 수업명</label>
+                        <span class="help-icon">?</span>
+                        <div class="tooltip-text">
+                            학부모님께 나가는 일정표 제목이자 저장 파일명입니다.<br>(예: "중1B1", "정규반")
+                        </div>
+                    </div>
+                    <input type="text" id="className" placeholder="반 이름을 입력하세요" required style="margin-top:0.5rem;">
+                </div>
+
+                <div class="form-group">
+                    <div class="tooltip-wrap">
+                        <label style="margin:0;">수업 요일</label>
+                        <span class="help-icon">?</span>
+                        <div class="tooltip-text">
+                            기본 수업 요일을 모두 선택하세요.<br>보강 수업은 요일과 상관없이 하단 상세 관리에서 별도로 지정 가능합니다.
+                        </div>
+                    </div>
+                    <div class="toggle-group" id="daysGroup">
+                        <!-- Days Toggles -->
+                        <input type="checkbox" id="day-1" class="toggle-input day-checkbox" value="1"><label for="day-1"
+                            class="toggle-label day-label">월</label>
+                        <input type="checkbox" id="day-2" class="toggle-input day-checkbox" value="2"><label for="day-2"
+                            class="toggle-label day-label">화</label>
+                        <input type="checkbox" id="day-3" class="toggle-input day-checkbox" value="3"><label for="day-3"
+                            class="toggle-label day-label">수</label>
+                        <input type="checkbox" id="day-4" class="toggle-input day-checkbox" value="4"><label for="day-4"
+                            class="toggle-label day-label">목</label>
+                        <input type="checkbox" id="day-5" class="toggle-input day-checkbox" value="5"><label for="day-5"
+                            class="toggle-label day-label">금</label>
+                        <input type="checkbox" id="day-6" class="toggle-input day-checkbox" value="6"><label for="day-6"
+                            class="toggle-label day-label">토</label>
+                        <input type="checkbox" id="day-0" class="toggle-input day-checkbox" value="0"><label for="day-0"
+                            class="toggle-label day-label">일</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="tooltip-wrap">
+                        <label style="margin:0;">월 총 회차 (자동 계산용)</label>
+                        <span class="help-icon">?</span>
+                        <div class="tooltip-text">
+                            시작일부터 달력을 자동으로 세어 목표 회차(예: 8회)가 되는 종료일을 척척 계산합니다.<br>휴강 처리 후 보강일이 있으면 총 회차는 유지됩니다.
+                        </div>
+                    </div>
+                    <div class="toggle-group" id="globalSessionsGroup">
+                        <!-- Session Count Radios 1 ~ 12 (Injected via JS) -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <div class="tooltip-wrap">
+                            <label style="margin: 0;">청구 월 및 기간 세팅</label>
+                            <span class="help-icon">?</span>
+                            <div class="tooltip-text">
+                                원하시는 기간(예: 4/1 ~ 4/28)을 설정하세요.<br>
+                                우측 목록 표에서 월별로 자동 구분선이 생성되어 가독성이 좋습니다.
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-ghost" id="addPeriodBtn"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.8rem; height: auto;">+ 월 추가</button>
+                    </div>
+
+                    <div id="periodsContainer">
+                        <!-- Dynamic BP rows injected here -->
+                    </div>
+                </div>
+
+                <div class="tooltip-wrap" style="width: 100%;">
+                    <button type="button" id="saveToListBtn" class="btn btn-primary btn-block"
+                        style="margin-top: 1rem;">
+                        목록에 반영 (Draw Calendar)
+                    </button>
+                    <div class="tooltip-text" style="bottom:120%;">
+                        설정을 마치고 이 버튼을 누르면, 우측에 고해상도 달력과 요약 표가 즉시 생성됩니다.
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT: Preview & Calendar Panel -->
+        <div class="card preview-area" style="min-height: 600px;">
+
+            <h2>
+                <div class="tooltip-wrap">
+                    캘린더 뷰
+                    <span class="help-icon" style="background:var(--color-primary);">?</span>
+                    <div class="tooltip-text" style="width:260px; font-weight:normal;">
+                        <b>[달력 인터랙션 팁]</b><br>
+                        생성된 달력의 날짜를 직접 클릭해보세요!<br><br>
+                        • 1번 클릭: <span style="color:#ff3b30">휴강 (세션 제외)</span><br>
+                        • 2번 클릭: <span style="color:#ffcc00">미정 (세션 제외)</span><br>
+                        • 3번 클릭: <span style="color:#007aff">정상 (세션 포함)</span><br><br>
+                        휴강 시 좌측 리스트에서 보강일을 즉시 지정할 수 있습니다.
+                    </div>
+                </div>
+                <div class="view-actions">
+                    <div class="tooltip-wrap">
+                        <button class="btn btn-secondary" id="saveImageBtn"
+                            style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px;">사진 저장</button>
+                        <div class="tooltip-text" style="right:0; left:auto; margin-left:0; width:160px; bottom: 120%;">
+                            고해상도(3배 확대) 이미지로 자동 변환되어 확대해도 깨지지 않게 저장됩니다.
+                        </div>
+                    </div>
+                </div>
+            </h2>
+
+            <!-- Area specifically meant to be rasterized to an image -->
+            <div id="exportArea" style="padding: 1rem;">
+                <div id="exportHeader"
+                    style="display:flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2rem;">
+                    <h4 id="exportAcademyName"
+                        style="display:none; text-align: center; color: var(--color-text-main); font-size: 1.1rem; margin-bottom: 0.25rem; font-weight: 800;">
+                        팁스영어수학학원</h4>
+                    <h3 id="exportTitle" class="export-title" style="display:none; margin-top: 0; font-size: 1.3rem;">
+                    </h3>
+                    <div class="legend" id="dynamicLegend"
+                        style="justify-content: center; margin-top: 0.5rem; padding: 0;">
+                        <!-- Rendered via JS to show period colors -->
+                    </div>
+                </div>
+
+                <div class="layout-horizontal" style="align-items: stretch;">
+                    <div class="calendar-stack" id="calendarSection" style="flex: 1; margin: 0; padding-top: 0.5rem;">
+                        <!-- Rendered Calendars -->
+                        <div style="text-align: center; color: var(--color-text-second); padding: 4rem 0;">좌측에서 일정을 세팅하고
+                            버튼을 눌러주세요.</div>
+                    </div>
+
+                    <div class="schedule-table-wrapper" id="tablePreview"
+                        style="flex: 1; padding: 0.5rem; min-width: unset;">
+                        <table class="schedule-table" style="margin-top: 0;">
+                            <thead>
+                                <tr>
+                                    <th width="15%">월</th>
+                                    <th width="15%">회차</th>
+                                    <th width="40%">날짜</th>
+                                    <th width="30%">상태</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div> <!-- /app-container -->
+
+    <script>
+        const daysName = ['일', '월', '화', '수', '목', '금', '토'];
+        const themeColors = ['#007aff', '#af52de', '#34c759', '#ff9500', '#5856d6', '#ff2d55'];
+
+        // Inject Session Radio Buttons Safely
+        const sessionGroup = document.getElementById('globalSessionsGroup');
+        sessionGroup.className = 'toggle-grid';
+        let sessionHTML = '';
+        for (let i = 1; i <= 12; i++) {
+            sessionHTML += `<input type="radio" id="session-${i}" name="global_sessions" class="toggle-input session-radio" value="${i}">`;
+            sessionHTML += `<label for="session-${i}" class="toggle-label">${i}회</label>`;
+        }
+        sessionGroup.innerHTML = sessionHTML;
+
+        // Data Store
+        let sessionStates = {};
+        let currentCalculation = [];
+        let billingPeriods = [];
+
+        // Trigger recalculation on all rows whenever global global sessions changed or days changed
+        const triggerGlobalRecalc = () => {
+            document.querySelectorAll('.billing-period-card').forEach(card => {
+                autoCalculateEnd(card.id);
+            });
+        };
+
+        document.querySelectorAll('.session-radio, .day-checkbox').forEach(input => {
+            input.addEventListener('change', triggerGlobalRecalc);
+        });
+
+        // Initialize first period row
+        function createPeriodRow(id, defaultMonthNum, defaultStart = '', defaultEnd = '') {
+            const div = document.createElement('div');
+            div.className = 'billing-period-card';
+            div.id = id;
+
+            // Build 1~12 buttons for Month Selector dynamically
+            let monthButtonsHTML = '';
+            for (let i = 1; i <= 12; i++) {
+                const checkedStr = (i === parseInt(defaultMonthNum)) ? 'checked' : '';
+                monthButtonsHTML += `
+            <input type="radio" id="month-${id}-${i}" name="month_${id}" class="toggle-input month-radio" value="${i}" ${checkedStr} onchange="renderCalendar()">
+            <label for="month-${id}-${i}" class="toggle-label" style="min-width: 36px; height: 32px; font-size: 0.75rem; padding: 0 0.35rem;">${i}월</label>
+        `;
+            }
+
+            div.innerHTML = `
+        <div class="bp-header">
+           <div style="flex:1;">
+               <label style="margin-bottom:0.25rem; font-size:0.75rem;">청구월 (결제월)</label>
+               <div class="toggle-grid" style="margin-top:0.1rem; gap:0.2rem;">
+                  ${monthButtonsHTML}
+               </div>
+           </div>
+           <button type="button" class="remove-btn" onclick="removePeriod('${id}')">✕</button>
+        </div>
+        
+        <div class="bp-row">
+           <div class="bp-item">
+             <label>시작일</label>
+             <input type="date" class="p-start" value="${defaultStart}">
+           </div>
+           <div class="bp-item">
+             <label>종료일</label>
+             <input type="date" class="p-end" value="${defaultEnd}">
+           </div>
+        </div>
+
+        <div class="session-mgmt-toggle" style="margin-top:0.75rem; text-align:center;">
+             <button type="button" class="btn btn-secondary" style="width:100%; font-size:0.75rem; padding:0.4rem;" onclick="toggleSessionMgmt('${id}')">
+                상세 세션 관리 (휴강/메모) ▾
+             </button>
+         </div>
+
+         <div class="session-list" id="sessions_${id}" style="display:none; margin-top:0.5rem; padding:0.5rem; background:rgba(255,255,255,0.5); border-radius:8px;">
+             <!-- Sessions rendered here in real-time -->
+         </div>
+
+         <div class="overlap-warning" style="display:none; margin-top:0.5rem; color:var(--color-exception); font-size:0.75rem; font-weight:700; text-align:center;">
+             ⚠️ 다른 청구 기간과 날짜가 겹칩니다!
+         </div>
+      `;
+
+            // Add auto-calc listeners (only triggered by start date changing locally now)
+            const sInput = div.querySelector('.p-start');
+            const eInput = div.querySelector('.p-end');
+
+            const triggerUpdate = () => {
+                autoCalculateEnd(id);
+                renderCalendar();
+            };
+
+            sInput.addEventListener('change', triggerUpdate);
+            eInput.addEventListener('change', () => renderCalendar());
+
+            return div;
+        }
+
+        window.toggleSessionMgmt = function (id) {
+            const list = document.getElementById('sessions_' + id);
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                updateSessionListUI(id);
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        function updateSessionListUI(rowId) {
+            const listContainer = document.getElementById('sessions_' + rowId);
+            if (!listContainer || listContainer.style.display === 'none') return;
+
+            const row = document.getElementById(rowId);
+            const startStr = row.querySelector('.p-start').value;
+            const endStr = row.querySelector('.p-end').value;
+            if (!startStr || !endStr) return;
+
+            const selectedDays = getSelectedDays();
+            const sObj = parseDate(startStr);
+            const eObj = parseDate(endStr);
+
+            let html = '';
+            let curr = new Date(sObj);
+            let protection = 0;
+            while (curr <= eObj && protection < 100) {
+                if (selectedDays.includes(curr.getDay())) {
+                    const y = curr.getFullYear();
+                    const m = String(curr.getMonth() + 1).padStart(2, '0');
+                    const d = String(curr.getDate()).padStart(2, '0');
+                    const dStr = `${y}-${m}-${d}`;
+
+                    const stateObj = sessionStates[dStr] || { state: 'active', memo: '', makeupDate: '' };
+                    const curState = typeof stateObj === 'object' ? stateObj.state : stateObj;
+                    const curMemo = typeof stateObj === 'object' ? stateObj.memo : '';
+                    const curMakeup = typeof stateObj === 'object' ? stateObj.makeupDate : '';
+
+                    let sessionNumStr = '-';
+                    const calcSession = currentCalculation.find(c => c.dateStr === dStr && c.originalDateStr == null);
+                    if (calcSession && calcSession.sessionNumInPeriod !== '-') {
+                        sessionNumStr = `${calcSession.sessionNumInPeriod}회`;
+                    }
+
+                    html += `
+                        <div class="session-item" style="display:flex; flex-direction:column; gap:0.35rem; margin-bottom:0.8rem; padding:0.6rem; background:#fff; border-radius:8px; border:1px solid var(--color-border);">
+                            <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.75rem;">
+                                <span style="width:2rem; font-weight:700; color:var(--color-primary);">${sessionNumStr}</span>
+                                <span style="flex:1; font-weight:700;">${curr.getMonth() + 1}/${curr.getDate()}</span>
+                                <select onchange="updateSessionItemState('${dStr}', this.value)" style="flex:1; padding:0.35rem; font-size:0.75rem; height:auto; padding-right:1.8rem; background-position: right 0.5rem center;">
+                                    <option value="active" ${curState === 'active' || !curState ? 'selected' : ''}>정상 수업</option>
+                                    <option value="exception" ${curState === 'exception' ? 'selected' : ''}>휴강 처리</option>
+                                    <option value="tbd" ${curState === 'tbd' ? 'selected' : ''}>미정(TBD)</option>
+                                </select>
+                            </div>
+                            
+                            ${(curState === 'exception' || curState === 'tbd') ? `
+                            <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                                <input type="text" placeholder="휴강/미정 사유 입력 (표에 표시됨)" value="${curMemo}" 
+                                    oninput="updateSessionItemMemo('${dStr}', this.value)"
+                                    style="padding:0.4rem; font-size:0.75rem; width:100%;">
+                                
+                                ${curState === 'exception' ? `
+                                <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.1rem; padding:0.4rem; background:#f0f9ff; border-radius:4px; border:1px dashed #007aff;">
+                                    <span style="font-size:0.7rem; font-weight:700; color:#007aff; white-space:nowrap;">🗓️ 보강일:</span>
+                                    <input type="date" value="${curMakeup || ''}" 
+                                        onchange="updateSessionMakeup('${dStr}', this.value)"
+                                        style="flex:1; padding:0.2rem; font-size:0.7rem; border:none; background:transparent;">
+                                </div>
+                                ` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+                curr.setDate(curr.getDate() + 1);
+                protection++;
+            }
+            listContainer.innerHTML = html || '<div style="font-size:0.7rem;">해당 기간에 선택된 수업 요일이 없습니다.</div>';
+        }
+
+        window.updateSessionItemState = function (dStr, state) {
+            if (state === 'active') {
+                delete sessionStates[dStr];
+            } else {
+                const current = sessionStates[dStr] || { memo: '', makeupDate: '' };
+                sessionStates[dStr] = { state: state, memo: current.memo || '', makeupDate: current.makeupDate || '' };
+            }
+            renderCalendar();
+        }
+
+        window.updateSessionItemMemo = function (dStr, memo) {
+            const current = sessionStates[dStr] || { state: 'active', makeupDate: '' };
+            sessionStates[dStr] = { state: current.state || 'active', memo: memo, makeupDate: current.makeupDate || '' };
+            renderCalendar(true); // Skip list sync to keep focus
+        }
+
+        window.updateSessionMakeup = function (dStr, makeupDate) {
+            const current = sessionStates[dStr] || { state: 'exception', memo: '' };
+            sessionStates[dStr] = { state: current.state || 'exception', memo: current.memo || '', makeupDate: makeupDate };
+            renderCalendar(true); // Skip list sync to keep focus
+        }
+
+        // Auto-Calculate End Date based on Global Sessions & Selected Days
+        function autoCalculateEnd(rowId) {
+            const row = document.getElementById(rowId);
+
+            const checkedSession = document.querySelector('input[name="global_sessions"]:checked');
+            if (!checkedSession) return; // Exit if no session selected
+
+            const targetCount = parseInt(checkedSession.value);
+            if (targetCount < 1) return;
+
+            const startStr = row.querySelector('.p-start').value;
+            const endInput = row.querySelector('.p-end');
+            if (!startStr) return;
+
+            const selectedDays = getSelectedDays();
+            if (selectedDays.length === 0) return;
+
+            const startObj = parseDate(startStr);
+            let curr = new Date(startObj);
+            let foundCount = 0;
+            let protection = 0;
+
+            while (foundCount < targetCount && protection < 365) {
+                if (selectedDays.includes(curr.getDay())) {
+                    foundCount++;
+                }
+                if (foundCount < targetCount) {
+                    curr.setDate(curr.getDate() + 1);
+                }
+                protection++;
+            }
+
+            const y = curr.getFullYear();
+            const m = String(curr.getMonth() + 1).padStart(2, '0');
+            const d = String(curr.getDate()).padStart(2, '0');
+            endInput.value = `${y}-${m}-${d}`;
+        }
+
+        function addPeriod() {
+            const id = 'p_' + Math.random().toString(36).substr(2, 9);
+            const container = document.getElementById('periodsContainer');
+            const count = container.children.length;
+
+            let firstDay = '';
+            let targetMonth = '';
+            let targetYear = '';
+
+            if (count > 0) {
+                const prevRow = container.children[count - 1];
+                const prevEndStr = prevRow.querySelector('.p-end').value;
+                const prevMonthChecked = prevRow.querySelector('.month-radio:checked');
+
+                if (prevMonthChecked) {
+                    let pMonth = parseInt(prevMonthChecked.value);
+                    targetMonth = pMonth === 12 ? 1 : pMonth + 1;
+                }
+
+                if (prevEndStr) {
+                    const selectedDays = getSelectedDays();
+                    let nextDayObj = parseDate(prevEndStr);
+                    nextDayObj.setDate(nextDayObj.getDate() + 1);
+
+                    if (selectedDays.length > 0) {
+                        let protection = 0;
+                        while (!selectedDays.includes(nextDayObj.getDay()) && protection < 14) {
+                            nextDayObj.setDate(nextDayObj.getDate() + 1);
+                            protection++;
+                        }
+                    }
+
+                    targetYear = nextDayObj.getFullYear();
+                    if (!targetMonth) targetMonth = nextDayObj.getMonth() + 1;
+
+                    const m = String(nextDayObj.getMonth() + 1).padStart(2, '0');
+                    const d = String(nextDayObj.getDate()).padStart(2, '0');
+                    firstDay = `${targetYear}-${m}-${d}`;
+                }
+            }
+
+            if (!firstDay) {
+                const now = new Date();
+                const baseMonth = now.getMonth() + 1; // current month (1~12)
+                const targetDate = new Date(now.getFullYear(), baseMonth + count, 1);
+                targetMonth = targetDate.getMonth() + 1;
+                targetYear = targetDate.getFullYear();
+                firstDay = `${targetYear}-${String(targetMonth).padStart(2, '0')}-01`;
+            }
+
+            // Default end day to the end of the month
+            const lastDayDate = new Date(targetYear, targetMonth, 0);
+            const lastDay = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
+
+            container.appendChild(createPeriodRow(id, targetMonth, firstDay, lastDay));
+
+            // Ensure new row obeys auto-calculating rules immediately if start dates are present
+            autoCalculateEnd(id);
+        }
+
+        window.removePeriod = function (id) {
+            const row = document.getElementById(id);
+            if (row) row.remove();
+        }
+
+        // Init first period automatically
+        addPeriod();
+        document.getElementById('addPeriodBtn').addEventListener('click', addPeriod);
+
+        // Get input data
+        function getSelectedDays() {
+            return Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => parseInt(cb.value));
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return new Date();
+            const [y, m, d] = dateStr.split('-');
+            return new Date(y, m - 1, d);
+        }
+
+        // Main render function
+        document.getElementById('saveToListBtn').addEventListener('click', () => {
+            renderCalendar();
+        });
+
+        function getFullClassName() {
+            const subject = document.querySelector('input[name="subject"]:checked').value;
+            const className = document.getElementById('className').value;
+            if (!className) return null;
+            return `[${subject}] ${className}`;
+        }
+
+        function renderCalendar(skipListSync = false) {
+            const fullClassName = getFullClassName();
+            if (!fullClassName) return alert("수업명을 입력해주세요.");
+
+            const selectedDays = getSelectedDays();
+            if (selectedDays.length === 0) return alert("수업 요일을 최소 1개 선택해주세요.");
+
+            // Parse Billing Periods from DOM
+            const rows = document.querySelectorAll('.billing-period-card');
+            billingPeriods = [];
+            let globalMinDate = null;
+            let globalMaxDate = null;
+
+            let bIndex = 0;
+            const periodDatas = [];
+
+            rows.forEach(r => {
+                const monthChecked = r.querySelector('.month-radio:checked');
+                const label = monthChecked ? monthChecked.value + "월" : "미지정";
+                const startStr = r.querySelector('.p-start').value;
+                const endStr = r.querySelector('.p-end').value;
+
+                if (startStr && endStr) {
+                    const sObj = parseDate(startStr);
+                    const eObj = parseDate(endStr);
+                    if (sObj <= eObj) {
+                        const themeColor = themeColors[bIndex % themeColors.length];
+                        periodDatas.push({ id: r.id, label, start: startStr, end: endStr, sObj, eObj, color: themeColor });
+                        bIndex++;
+                    }
+                }
+
+                // Reset styling
+                r.style.border = '';
+                const warning = r.querySelector('.overlap-warning');
+                if (warning) warning.style.display = 'none';
+            });
+
+            // Overlap Validation
+            for (let i = 0; i < periodDatas.length; i++) {
+                for (let j = i + 1; j < periodDatas.length; j++) {
+                    const p1 = periodDatas[i];
+                    const p2 = periodDatas[j];
+
+                    // Check if [s1, e1] overlaps with [s2, e2]
+                    if (p1.sObj <= p2.eObj && p2.sObj <= p1.eObj) {
+                        [p1.id, p2.id].forEach(id => {
+                            const card = document.getElementById(id);
+                            card.style.border = '2px solid var(--color-exception)';
+                            const warning = card.querySelector('.overlap-warning');
+                            if (warning) warning.style.display = 'block';
+                        });
+                        alert(`[주의] ${p1.label}과 ${p2.label}의 기간이 겹칩니다!`);
+                    }
+                }
+            }
+
+            billingPeriods = periodDatas;
+            billingPeriods.forEach(bp => {
+                if (!globalMinDate || bp.sObj < globalMinDate) globalMinDate = bp.sObj;
+                if (!globalMaxDate || bp.eObj > globalMaxDate) globalMaxDate = bp.eObj;
+            });
+
+            if (billingPeriods.length === 0) return alert("유효한 시작일/종료일 기간을 입력해주세요.");
+
+            // Compute Sessions across all periods sequentially
+            currentCalculation = [];
+            const billingGroups = {};
+
+            billingPeriods.forEach(bp => {
+                billingGroups[bp.label] = { count: 0, sessions: [], color: bp.color, startDateStr: bp.start, endDateStr: bp.end };
+
+                const validDatesForBp = [];
+
+                let curr = new Date(bp.sObj);
+                while (curr <= bp.eObj) {
+                    if (selectedDays.includes(curr.getDay())) {
+                        const y = curr.getFullYear();
+                        const m = String(curr.getMonth() + 1).padStart(2, '0');
+                        const d = String(curr.getDate()).padStart(2, '0');
+                        const dStr = `${y}-${m}-${d}`;
+
+                        const sessionState = sessionStates[dStr];
+                        const state = typeof sessionState === 'object' ? sessionState.state : sessionState;
+                        const memo = typeof sessionState === 'object' ? sessionState.memo : '';
+                        const makeupDate = typeof sessionState === 'object' ? sessionState.makeupDate : '';
+
+                        validDatesForBp.push({
+                            dateStr: dStr,
+                            dateObj: new Date(curr),
+                            state: state || 'active',
+                            memo: memo || '',
+                            makeupDate: makeupDate || '',
+                            originalDateStr: null
+                        });
+
+                        if (state === 'exception' && makeupDate) {
+                            validDatesForBp.push({
+                                dateStr: makeupDate,
+                                dateObj: parseDate(makeupDate),
+                                state: 'makeup',
+                                originalDateStr: dStr,
+                                memo: '',
+                                makeupDate: ''
+                            });
+                        }
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
+
+                validDatesForBp.sort((a, b) => a.dateObj - b.dateObj);
+
+                validDatesForBp.forEach(item => {
+                    // Exceptions and tbd don't increment the counter
+                    if (item.state !== 'exception' && item.state !== 'tbd') {
+                        billingGroups[bp.label].count++;
+                    }
+
+                    const sessionData = {
+                        dateObj: item.dateObj,
+                        dateStr: item.dateStr,
+                        state: item.state,
+                        memo: item.memo,
+                        makeupDate: item.makeupDate,
+                        originalDateStr: item.originalDateStr,
+                        billingLabel: bp.label,
+                        color: bp.color,
+                        sessionNumInPeriod: (item.state === 'exception' || item.state === 'tbd') ? '-' : billingGroups[bp.label].count
+                    };
+
+                    billingGroups[bp.label].sessions.push(sessionData);
+                    currentCalculation.push(sessionData);
+                });
+            });
+
+            // Update Legend
+            const legendContainer = document.getElementById('dynamicLegend');
+            legendContainer.innerHTML = '';
+
+            billingPeriods.forEach(bp => {
+                legendContainer.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${bp.color}"></div>${bp.label}</div>`;
+            });
+            legendContainer.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:var(--color-exception)"></div>휴강</div>`;
+            legendContainer.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:var(--color-tbd)"></div>미정(TBD)</div>`;
+            legendContainer.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:#00c473"></div>보강</div>`;
+
+            // Adjust global max/min based on makeup dates. Sort recalculation needed.
+            currentCalculation.sort((a, b) => a.dateObj - b.dateObj);
+
+            if (currentCalculation.length > 0) {
+                if (!globalMinDate || currentCalculation[0].dateObj < globalMinDate) globalMinDate = currentCalculation[0].dateObj;
+                const lastIdx = currentCalculation.length - 1;
+                if (!globalMaxDate || currentCalculation[lastIdx].dateObj > globalMaxDate) globalMaxDate = currentCalculation[lastIdx].dateObj;
+            }
+
+
+            // Render Visual Calendar
+            const calWrapper = document.getElementById('calendarSection');
+            calWrapper.innerHTML = '';
+
+            let cY = globalMinDate.getFullYear();
+            let cM = globalMinDate.getMonth();
+            const endY = globalMaxDate.getFullYear();
+            const endM = globalMaxDate.getMonth();
+
+            while (cY < endY || (cY === endY && cM <= endM)) {
+
+                const monthCard = document.createElement('div');
+                monthCard.className = 'cal-month-card';
+
+                const mTitle = document.createElement('div');
+                mTitle.className = 'cal-month-title';
+                mTitle.textContent = `${cY}년 ${cM + 1}월`;
+                monthCard.appendChild(mTitle);
+
+                const grid = document.createElement('div');
+                grid.className = 'cal-grid';
+
+                daysName.forEach(dName => {
+                    const h = document.createElement('div'); h.className = 'cal-day-label'; h.textContent = dName;
+                    grid.appendChild(h);
+                });
+
+                const firstD = new Date(cY, cM, 1);
+                const lastD = new Date(cY, cM + 1, 0);
+
+                for (let i = 0; i < firstD.getDay(); i++) {
+                    const empty = document.createElement('div'); empty.className = 'cal-cell empty';
+                    grid.appendChild(empty);
+                }
+
+                for (let d = 1; d <= lastD.getDate(); d++) {
+                    const currDate = new Date(cY, cM, d);
+                    const dStr = `${cY}-${String(cM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+                    const cell = document.createElement('div');
+                    cell.className = 'cal-cell';
+
+                    const sessionMatchList = currentCalculation.filter(s => s.dateStr === dStr);
+                    // Handle primary session state for the visually matched day
+                    // If there's an active/exception/tbd vs makeup, we display active/exception/tbd
+                    // If only makeup, we display makeup green.
+                    let primaryMatch = sessionMatchList.find(s => s.state !== 'makeup') || sessionMatchList[0];
+
+                    if (primaryMatch) {
+                        cell.classList.add(primaryMatch.state);
+
+                        // Inject the distinct theme color variable or makeup color
+                        if (primaryMatch.state === 'active') {
+                            cell.style.setProperty('--theme-color', primaryMatch.color);
+                        } else if (primaryMatch.state === 'makeup') {
+                            cell.style.setProperty('--theme-color', '#00c473');
+                            cell.style.background = '#00c473';
+                            cell.style.color = 'white';
+                        }
+
+                        cell.innerHTML = `
+                   <span>${d}</span>
+                   ${(primaryMatch.state !== 'exception' && primaryMatch.state !== 'tbd') ? `<span class="cal-session-num">${primaryMatch.sessionNumInPeriod}</span>` : ''}
+                `;
+
+                        cell.addEventListener('click', () => {
+                            // Don't toggle state if it is explicitly a makeup day only
+                            if (primaryMatch.state === 'makeup') return;
+
+                            const current = sessionStates[dStr];
+                            const curState = typeof current === 'object' ? current.state : current;
+                            const curMemo = typeof current === 'object' ? current.memo : '';
+                            const curMakeup = typeof current === 'object' ? current.makeupDate : '';
+
+                            if (!curState) {
+                                sessionStates[dStr] = { state: 'exception', memo: curMemo, makeupDate: curMakeup };
+                            } else if (curState === 'exception') {
+                                sessionStates[dStr] = { state: 'tbd', memo: curMemo, makeupDate: curMakeup };
+                            } else {
+                                delete sessionStates[dStr];
+                            }
+                            renderCalendar();
+                        });
+                    } else {
+                        cell.classList.add('disabled');
+                        cell.textContent = d;
+                    }
+
+                    grid.appendChild(cell);
+                }
+
+                monthCard.appendChild(grid);
+                calWrapper.appendChild(monthCard);
+
+                cM++;
+                if (cM > 11) { cM = 0; cY++; }
+            }
+
+            // Sync left-side lists
+            if (!skipListSync) {
+                rows.forEach(r => updateSessionListUI(r.id));
+            }
+
+            // Generate HTML Table Output
+            const tableWrapper = document.getElementById('tablePreview');
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            let lastMonthLabel = '';
+
+            currentCalculation.forEach(s => {
+                const currentMonthLabel = `${s.dateObj.getFullYear()}년 ${s.dateObj.getMonth() + 1}월`;
+                if (currentMonthLabel !== lastMonthLabel) {
+                    const divider = document.createElement('tr');
+                    divider.className = 'month-divider';
+                    divider.innerHTML = `<td colspan="4">${currentMonthLabel}</td>`;
+                    tableBody.appendChild(divider);
+                    lastMonthLabel = currentMonthLabel;
+                }
+
+                const tr = document.createElement('tr');
+                if (s.state === 'exception') tr.style.background = 'var(--color-exception-bg)';
+                if (s.state === 'tbd') tr.style.background = 'var(--color-tbd-bg)';
+                if (s.state === 'makeup') tr.style.background = '#e6f9f0';
+
+                let stateBadge = `<span style="color: ${s.color}; font-weight:700;">정상수업</span>`;
+                if (s.state === 'exception') stateBadge = `<span style="color: var(--color-exception); font-weight:700;">휴강</span>`;
+                if (s.state === 'tbd') stateBadge = `<span style="color: #d4a000; font-weight:700;">미정(TBD)</span>`;
+                if (s.state === 'makeup') stateBadge = `<span style="color: #00c473; font-weight:700;">보강수업</span>`;
+
+                const dayName = daysName[s.dateObj.getDay()];
+                const formattedDate = `${s.dateObj.getMonth() + 1}/${s.dateObj.getDate()} (${dayName})`;
+
+                let memoText = '';
+                if (s.memo) memoText += `<div style="font-size:0.75rem; color:var(--color-text-second); font-weight:400;">📝 ${s.memo}</div>`;
+                if (s.state === 'exception' && s.makeupDate) {
+                    const mObj = parseDate(s.makeupDate);
+                    memoText += `<div style="font-size:0.75rem; color:#00c473; font-weight:700;">↳ 보강: ${mObj.getMonth() + 1}/${mObj.getDate()}</div>`;
+                }
+                if (s.state === 'makeup' && s.originalDateStr) {
+                    const oObj = parseDate(s.originalDateStr);
+                    memoText += `<div style="font-size:0.75rem; color:var(--color-exception); font-weight:700;">↳ ${oObj.getMonth() + 1}/${oObj.getDate()} 휴강건 보강</div>`;
+                }
+
+                tr.innerHTML = `
+            <td><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${s.color}; margin-right:6px;"></span>${s.billingLabel}</td>
+            <td>${s.sessionNumInPeriod}${(s.state !== 'exception' && s.state !== 'tbd' && s.sessionNumInPeriod !== '-') ? '회' : ''}</td>
+            <td style="font-weight:700; font-size:1.05rem;">
+                ${formattedDate}
+                ${memoText}
+            </td>
+            <td>${stateBadge}</td>
+         `;
+                tableBody.appendChild(tr);
+            });
+
+            tableWrapper.style.display = 'flex';
+        }
+
+        // Export Logic
+        function feedback(btnId, msg) {
+            const b = document.getElementById(btnId);
+            const orig = b.innerHTML;
+            b.innerHTML = msg; b.style.color = 'var(--color-primary)';
+            setTimeout(() => { b.innerHTML = orig; b.style.color = ''; }, 2000);
+        }
+
+
+        document.getElementById('saveImageBtn').addEventListener('click', () => {
+            if (currentCalculation.length === 0) return alert("먼저 목록 반영 버튼을 눌러주세요.");
+            const exportArea = document.getElementById('exportArea');
+            const fullClassName = getFullClassName() || '일정 달력';
+
+            document.getElementById('exportTitle').textContent = `${fullClassName} 수업 일정표`;
+            document.getElementById('exportAcademyName').style.display = 'block';
+            document.getElementById('exportTitle').style.display = 'block';
+
+            const btn = document.getElementById('saveImageBtn');
+            btn.textContent = '저장중...';
+
+            html2canvas(exportArea, { scale: 3, backgroundColor: '#ffffff' }).then(canvas => {
+                document.getElementById('exportAcademyName').style.display = 'none';
+                document.getElementById('exportTitle').style.display = 'none';
+
+                const link = document.createElement('a');
+                const subject = document.querySelector('input[name="subject"]:checked').value;
+                const className = document.getElementById('className').value;
+                link.download = `팁스영어수학학 [${subject}] ${className}_수업 일정표.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+                btn.textContent = '사진 저장';
+            });
+        });
+
+    </script>
+</body>
+
+</html>

@@ -940,9 +940,8 @@
                                 </select>
                             </div>
                             
-                            ${(curState === 'exception' || curState === 'tbd') ? `
                             <div style="display:flex; flex-direction:column; gap:0.25rem;">
-                                <input type="text" placeholder="휴강/미정 사유 입력 (표에 표시됨)" value="${curMemo}" 
+                                <input type="text" placeholder="메모 입력 (표에 표시됨)" value="${curMemo}" 
                                     oninput="updateSessionItemMemo('${dStr}', this.value)"
                                     style="padding:0.4rem; font-size:0.75rem; width:100%;">
                                 
@@ -955,7 +954,6 @@
                                 </div>
                                 ` : ''}
                             </div>
-                            ` : ''}
                         </div>
                     `;
                 }
@@ -1413,6 +1411,44 @@
                 container.appendChild(cell);
             };
 
+            window.editTableMemo = (cell, dStr) => {
+                const currentObj = sessionStates[dStr] || {};
+                const currentMemo = typeof currentObj === 'object' ? (currentObj.memo || '') : '';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentMemo;
+                input.style.width = '100%';
+                input.style.padding = '4px';
+                input.style.fontSize = '0.9rem';
+                input.style.border = '1px solid var(--color-primary)';
+                input.style.borderRadius = '4px';
+
+                const finishEdit = () => {
+                    const newMemo = input.value.trim();
+                    if (sessionStates[dStr] && typeof sessionStates[dStr] === 'object') {
+                        sessionStates[dStr].memo = newMemo;
+                    } else if (sessionStates[dStr]) {
+                        // It's a string state like 'force_active'
+                        sessionStates[dStr] = { state: sessionStates[dStr], memo: newMemo };
+                    } else {
+                        // Regular session that was never in sessionStates
+                        sessionStates[dStr] = { state: 'active', memo: newMemo };
+                    }
+                    renderCalendar();
+                };
+
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') finishEdit();
+                    if (e.key === 'Escape') renderCalendar();
+                };
+                input.onblur = finishEdit;
+
+                cell.innerHTML = '';
+                cell.appendChild(input);
+                input.focus();
+            };
+
             window.handleSubstitution = function (sourceDStr, targetDStr) {
                 const sourceState = sessionStates[sourceDStr];
 
@@ -1532,7 +1568,7 @@
                 tr.innerHTML = `
             <td><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${s.color}; margin-right:6px;"></span>${s.billingLabel}</td>
             <td>${s.sessionNumInPeriod}${(s.state !== 'exception' && s.state !== 'tbd' && s.sessionNumInPeriod !== '-') ? '회' : ''}</td>
-            <td style="font-weight:700; font-size:1.05rem;">
+            <td style="font-weight:700; font-size:1.05rem; cursor: cell;" ondblclick="window.editTableMemo(this, '${s.dateStr}')">
                 ${formattedDate}
                 ${memoText}
             </td>

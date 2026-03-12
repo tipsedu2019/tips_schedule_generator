@@ -482,13 +482,19 @@
         .cal-cell.active {
             background-color: var(--theme-color, var(--theme-0));
             color: white;
-            cursor: pointer;
+            cursor: grab;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: transform 0.1s;
+            transition: transform 0.1s, background-color 0.2s;
         }
 
         .cal-cell.active:active {
-            transform: scale(0.9);
+            cursor: grabbing;
+        }
+
+        .cal-cell.drop-over {
+            background-color: rgba(0, 122, 255, 0.1);
+            box-shadow: inset 0 0 0 2px var(--theme-0);
+            transform: scale(1.05);
         }
 
         .cal-cell.exception {
@@ -582,7 +588,7 @@
     </style>
 </head>
 
-<body oncontextmenu="return false" ondragstart="return false" onselectstart="return false">
+<body oncontextmenu="return false">
     <div class="app-container">
 
         <!-- LEFT: Input Panel -->
@@ -1167,14 +1173,15 @@
 
                 let curr = new Date(bp.sObj);
                 while (curr <= bp.eObj) {
-                    if (selectedDays.includes(curr.getDay())) {
-                        const y = curr.getFullYear();
-                        const m = String(curr.getMonth() + 1).padStart(2, '0');
-                        const d = String(curr.getDate()).padStart(2, '0');
-                        const dStr = `${y}-${m}-${d}`;
+                    const y = curr.getFullYear();
+                    const m = String(curr.getMonth() + 1).padStart(2, '0');
+                    const d = String(curr.getDate()).padStart(2, '0');
+                    const dStr = `${y}-${m}-${d}`;
 
-                        const sessionState = sessionStates[dStr];
-                        const state = typeof sessionState === 'object' ? sessionState.state : sessionState;
+                    const sessionState = sessionStates[dStr];
+                    const state = typeof sessionState === 'object' ? sessionState.state : sessionState;
+
+                    if (selectedDays.includes(curr.getDay()) || state === 'force_active') {
                         const memo = typeof sessionState === 'object' ? sessionState.memo : '';
                         const makeupDate = typeof sessionState === 'object' ? sessionState.makeupDate : '';
 
@@ -1307,9 +1314,9 @@
                 }
 
                 if (primaryMatch) {
-                    cell.classList.add(primaryMatch.state);
+                    cell.classList.add(primaryMatch.state === 'force_active' ? 'active' : primaryMatch.state);
 
-                    if (primaryMatch.state === 'active') {
+                    if (primaryMatch.state === 'active' || primaryMatch.state === 'force_active') {
                         cell.style.setProperty('--theme-color', primaryMatch.color);
                     } else if (primaryMatch.state === 'makeup') {
                         cell.style.setProperty('--theme-color', '#00c473');
@@ -1330,7 +1337,9 @@
                         const curMemo = typeof current === 'object' ? current.memo : '';
                         const curMakeup = typeof current === 'object' ? current.makeupDate : '';
 
-                        if (!curState) {
+                        if (curState === 'force_active') {
+                            delete sessionStates[dStr];
+                        } else if (!curState) {
                             sessionStates[dStr] = { state: 'exception', memo: curMemo, makeupDate: curMakeup };
                         } else if (curState === 'exception') {
                             sessionStates[dStr] = { state: 'tbd', memo: curMemo, makeupDate: curMakeup };
@@ -1339,12 +1348,77 @@
                         }
                         renderCalendar();
                     });
+
+                    // Drag and Drop implementation
+                    cell.setAttribute('draggable', true);
+                    cell.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', dStr);
+                        cell.style.opacity = '0.5';
+                    });
+                    cell.addEventListener('dragend', () => {
+                        cell.style.opacity = '1';
+                    });
+                } else if (isAdjacent) {
+                    cell.classList.add('disabled');
+                    cell.textContent = normD;
                 } else {
                     cell.classList.add('disabled');
                     cell.textContent = normD;
+                    cell.style.cursor = 'pointer';
+                    cell.addEventListener('click', () => {
+                        sessionStates[dStr] = { state: 'force_active' };
+                        renderCalendar();
+                    });
                 }
 
+                // Drop target logic for all cells
+                cell.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!cell.classList.contains('active') && !cell.classList.contains('exception') && !cell.classList.contains('makeup')) {
+                        cell.classList.add('drop-over');
+                    }
+                });
+                cell.addEventListener('dragleave', () => {
+                    cell.classList.remove('drop-over');
+                });
+                cell.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    cell.classList.remove('drop-over');
+                    const sourceDStr = e.dataTransfer.getData('text/plain');
+                    if (sourceDStr && sourceDStr !== dStr) {
+                        handleSubstitution(sourceDStr, dStr);
+                    }
+                });
+
                 container.appendChild(cell);
+            };
+
+            window.handleSubstitution = function (sourceDStr, targetDStr) {
+                const sourceState = sessionStates[sourceDStr];
+
+                // If it was a regular session (no state in sessionStates yet)
+                if (!sourceState) {
+                    sessionStates[sourceDStr] = {
+                        state: 'exception',
+                        memo: '수업 대체',
+                        makeupDate: targetDStr
+                    };
+                } else if (sourceState.state === 'makeup') {
+                    // Find the original date that had this makeup
+                    const originalDateStr = sourceState.originalDateStr;
+                    if (originalDateStr && sessionStates[originalDateStr]) {
+                        sessionStates[originalDateStr].makeupDate = targetDStr;
+                    }
+                } else if (sourceState.state === 'active') {
+                    // Someone manually set it to active but preserved it in state
+                    sessionStates[sourceDStr] = {
+                        state: 'exception',
+                        memo: '수업 대체',
+                        makeupDate: targetDStr
+                    };
+                }
+
+                renderCalendar();
             };
 
             monthsToRender.forEach(month => {
